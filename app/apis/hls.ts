@@ -47,31 +47,25 @@ export const HLSApi = new Api<HLSQueryParams, HLSResponseData[]>(
 
     // Build dynamic WHERE clause
     const conditions: string[] = [];
-    const params: any = {};
 
     if (appName) {
-      conditions.push(`appName = {appName:String}`);
-      params.appName = appName;
+      conditions.push(`appName = '${appName}'`);
     }
 
     if (eventType) {
-      conditions.push(`eventType = {eventType:String}`);
-      params.eventType = eventType;
+      conditions.push(`eventType = '${eventType}'`);
     }
 
     if (stage) {
-      conditions.push(`stage = {stage:String}`);
-      params.stage = stage;
+      conditions.push(`stage = '${stage}'`);
     }
 
     if (startDate) {
-      conditions.push(`eventDate >= {startDate:Date}`);
-      params.startDate = startDate;
+      conditions.push(`eventDate >= '${startDate}'`);
     }
 
     if (endDate) {
-      conditions.push(`eventDate <= {endDate:Date}`);
-      params.endDate = endDate;
+      conditions.push(`eventDate <= '${endDate}'`);
     }
 
     const whereClause =
@@ -97,7 +91,7 @@ export const HLSApi = new Api<HLSQueryParams, HLSResponseData[]>(
       LIMIT ${limit}
     `;
 
-    const data = await client.query.execute<HLSResponseData>(query, params);
+    const data = await client.query.execute<HLSResponseData>(query);
     const result: HLSResponseData[] = await data.json();
 
     // Cache for 30 minutes

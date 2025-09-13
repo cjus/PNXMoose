@@ -10,11 +10,15 @@
     "@514labs/moose-lib": "latest",
     "axios": "^1.7.7",
     "ts-patch": "^3.3.0",
-    "typia": "^9.6.1"
+    "typia": "^9.6.1",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@514labs/moose-cli": "latest",
     "@faker-js/faker": "^9.7.0",
     "@types/node": "^20.12.12"
+  },
+  "overrides": {
+    "pretty-ms": "7.0.1"
   }
 }

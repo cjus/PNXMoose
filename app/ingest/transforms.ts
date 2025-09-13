@@ -119,11 +119,11 @@ PNXEventPipeline.stream!.addTransform(
   async (pnxEvent: PNXEvent): Promise<AnalyticsEvent | null> => {
     /**
      * Transform PNX events to Analytics events with caching and enrichment.
-     * Only processes events where message.type === "analytics"
+     * Only processes events where type === "analytics"
      */
 
     // Only process analytics events
-    if (pnxEvent.message.type !== "analytics") {
+    if (pnxEvent.type !== "analytics") {
       return null; // Skip non-analytics events
     }
 
@@ -137,18 +137,17 @@ PNXEventPipeline.stream!.addTransform(
       return cached;
     }
 
-    const analyticsMessage = pnxEvent.message;
     const { browserName, operatingSystem } = parseUserAgent(pnxEvent.userAgent);
 
     const result: AnalyticsEvent = {
       eventId: pnxEvent.eventId,
-      appName: analyticsMessage.appName,
-      appVersion: analyticsMessage.appVersion,
-      userId: analyticsMessage.userId,
-      userName: analyticsMessage.userName,
-      eventType: analyticsMessage.event,
-      eventSource: analyticsMessage.source,
-      navigationHref: analyticsMessage.href,
+      appName: pnxEvent.appName,
+      appVersion: pnxEvent.appVersion,
+      userId: pnxEvent.userId,
+      userName: pnxEvent.userName,
+      eventType: pnxEvent.event,
+      eventSource: pnxEvent.source,
+      navigationHref: pnxEvent.href,
       timestamp: new Date(pnxEvent.requestTimeEpoch),
       domainName: pnxEvent.domainName,
       stage: pnxEvent.stage,
@@ -174,11 +173,11 @@ PNXEventPipeline.stream!.addTransform(
   async (pnxEvent: PNXEvent): Promise<HLSEvent | null> => {
     /**
      * Transform PNX events to HLS events with caching and enrichment.
-     * Only processes events where message.type === "hls"
+     * Only processes events where type === "hls"
      */
 
     // Only process HLS events
-    if (pnxEvent.message.type !== "hls") {
+    if (pnxEvent.type !== "hls") {
       return null; // Skip non-HLS events
     }
 
@@ -192,22 +191,21 @@ PNXEventPipeline.stream!.addTransform(
       return cached;
     }
 
-    const hlsMessage = pnxEvent.message;
     const { browserName, operatingSystem } = parseUserAgent(pnxEvent.userAgent);
 
     const result: HLSEvent = {
       eventId: pnxEvent.eventId,
-      appName: hlsMessage.appName,
-      appVersion: hlsMessage.appVersion,
-      userId: hlsMessage.userId,
-      userName: hlsMessage.userName,
-      eventType: hlsMessage.event,
-      level: hlsMessage.level,
-      videoIndex: hlsMessage.videoIndex,
-      bitrate: hlsMessage.bitrate,
-      resolution: hlsMessage.resolution,
-      bandwidth: hlsMessage.bandwidth,
-      fragmentDuration: hlsMessage.fragmentDuration,
+      appName: pnxEvent.appName,
+      appVersion: pnxEvent.appVersion,
+      userId: pnxEvent.userId,
+      userName: pnxEvent.userName,
+      eventType: pnxEvent.event,
+      level: pnxEvent.level,
+      videoIndex: pnxEvent.videoIndex,
+      bitrate: pnxEvent.bitrate,
+      resolution: pnxEvent.resolution,
+      bandwidth: pnxEvent.bandwidth,
+      fragmentDuration: pnxEvent.fragmentDuration,
       timestamp: new Date(pnxEvent.requestTimeEpoch),
       domainName: pnxEvent.domainName,
       stage: pnxEvent.stage,
@@ -231,14 +229,10 @@ PNXEventPipeline.stream!.addTransform(
 const printPNXEvent = (pnxEvent: PNXEvent): void => {
   console.log("Received PNX event:");
   console.log(`  Event ID: ${pnxEvent.eventId}`);
-  console.log(
-    `  App: ${pnxEvent.message.appName} v${pnxEvent.message.appVersion}`
-  );
-  console.log(
-    `  User: ${pnxEvent.message.userName} (${pnxEvent.message.userId})`
-  );
-  console.log(`  Type: ${pnxEvent.message.type}`);
-  console.log(`  Event: ${pnxEvent.message.event}`);
+  console.log(`  App: ${pnxEvent.appName} v${pnxEvent.appVersion}`);
+  console.log(`  User: ${pnxEvent.userName} (${pnxEvent.userId})`);
+  console.log(`  Type: ${pnxEvent.type}`);
+  console.log(`  Event: ${pnxEvent.event}`);
   console.log(`  Stage: ${pnxEvent.stage}`);
   console.log(`  Timestamp: ${new Date(pnxEvent.requestTimeEpoch)}`);
   console.log("---");

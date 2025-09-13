@@ -12,38 +12,27 @@ import {
 
 /** =======Data Models========= */
 
-/** Base message structure for all PNX events */
-interface BaseMessage {
+/** Raw PNX event ingested via API - flattened structure for Moose compatibility */
+export interface PNXEvent {
+  eventId: Key<string>; // Unique event ID
+  // Message fields (flattened from nested structure)
   appName: string;
   appVersion: string;
   userId: string;
   userName: string;
   type: "analytics" | "hls";
   event: string;
-}
-
-/** Analytics-specific message fields */
-interface AnalyticsMessage extends BaseMessage {
-  type: "analytics";
+  // Analytics-specific fields (optional)
   source?: string; // e.g., "panel-manager"
   href?: string; // For navigation events
-}
-
-/** HLS video-specific message fields */
-interface HLSMessage extends BaseMessage {
-  type: "hls";
+  // HLS video-specific fields (optional)
   level?: number;
   videoIndex?: number;
   bitrate?: number;
   resolution?: string;
   bandwidth?: number;
   fragmentDuration?: number;
-}
-
-/** Raw PNX event ingested via API */
-export interface PNXEvent {
-  eventId: Key<string>; // Unique event ID
-  message: AnalyticsMessage | HLSMessage;
+  // Request metadata
   requestTimeEpoch: number;
   domainName: string;
   stage: "production" | "staging" | "development";

@@ -51,31 +51,25 @@ export const AnalyticsApi = new Api<
 
     // Build dynamic WHERE clause
     const conditions: string[] = [];
-    const params: any = {};
 
     if (appName) {
-      conditions.push(`appName = {appName:String}`);
-      params.appName = appName;
+      conditions.push(`appName = '${appName}'`);
     }
 
     if (eventType) {
-      conditions.push(`eventType = {eventType:String}`);
-      params.eventType = eventType;
+      conditions.push(`eventType = '${eventType}'`);
     }
 
     if (stage) {
-      conditions.push(`stage = {stage:String}`);
-      params.stage = stage;
+      conditions.push(`stage = '${stage}'`);
     }
 
     if (startDate) {
-      conditions.push(`eventDate >= {startDate:Date}`);
-      params.startDate = startDate;
+      conditions.push(`eventDate >= '${startDate}'`);
     }
 
     if (endDate) {
-      conditions.push(`eventDate <= {endDate:Date}`);
-      params.endDate = endDate;
+      conditions.push(`eventDate <= '${endDate}'`);
     }
 
     const whereClause =
@@ -102,10 +96,7 @@ export const AnalyticsApi = new Api<
       LIMIT ${limit}
     `;
 
-    const data = await client.query.execute<AnalyticsResponseData>(
-      query,
-      params
-    );
+    const data = await client.query.execute<AnalyticsResponseData>(query);
     const result: AnalyticsResponseData[] = await data.json();
 
     // Cache for 30 minutes
