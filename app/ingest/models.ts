@@ -1,9 +1,4 @@
-import {
-  IngestPipeline,
-  Key,
-  OlapTable,
-  DeadLetterModel,
-} from "@514labs/moose-lib";
+import { IngestPipeline, Key } from "@514labs/moose-lib";
 
 /**
  * Data Pipeline: PNX Events → Analytics Processing
@@ -14,13 +9,13 @@ import {
 
 /** Raw PNX event ingested via API - flattened structure for Moose compatibility */
 export interface PNXEvent {
-  eventId: Key<string>; // Unique event ID
+  eventId: string; // Unique event ID
   // Message fields (flattened from nested structure)
   appName: string;
   appVersion: string;
   userId: string;
   userName: string;
-  type: "analytics" | "hls";
+  type: string;
   event: string;
   // Analytics-specific fields (optional)
   source?: string; // e.g., "panel-manager"
@@ -35,7 +30,7 @@ export interface PNXEvent {
   // Request metadata
   requestTimeEpoch: number;
   domainName: string;
-  stage: "production" | "staging" | "development";
+  stage: string;
   sourceIp: string;
   userAgent: string;
 }
@@ -82,42 +77,25 @@ export interface HLSEvent {
   operatingSystem?: string; // Parsed from userAgent
 }
 
-/** Legacy models for backward compatibility */
-export interface Foo {
-  primaryKey: Key<string>; // Unique ID
-  timestamp: number; // Unix timestamp
-  optionalText?: string; // Text to analyze
-}
-
-export interface Bar {
-  primaryKey: Key<string>; // From Foo.primaryKey
-  utcTimestamp: Date; // From Foo.timestamp
-  hasText: boolean; // From Foo.optionalText?
-  textLength: number; // From Foo.optionalText.length
-}
-
 /** =======Pipeline Configuration========= */
 
 /** Dead letter tables for error handling */
-export const pnxEventDeadLetterTable = new OlapTable<DeadLetterModel>(
-  "PNXEventDeadLetter",
-  {
-    orderByFields: ["failedAt"],
-  }
-);
-
-export const deadLetterTable = new OlapTable<DeadLetterModel>("FooDeadLetter", {
-  orderByFields: ["failedAt"],
-});
+// Temporarily commented out to isolate build issue
+// export const pnxEventDeadLetterTable = new OlapTable<DeadLetterModel>(
+//   "PNXEventDeadLetter",
+//   {
+//     orderByFields: ["failedAt"],
+//   }
+// );
 
 /** Raw PNX event ingestion */
 export const PNXEventPipeline = new IngestPipeline<PNXEvent>("PNXEvent", {
   table: false, // No table; only stream raw events
   stream: true, // Buffer ingested events
   ingest: true, // POST /ingest/PNXEvent
-  deadLetterQueue: {
-    destination: pnxEventDeadLetterTable,
-  },
+  // deadLetterQueue: {
+  //   destination: pnxEventDeadLetterTable,
+  // },
 });
 
 /** Analytics events processing and storage */
@@ -135,20 +113,4 @@ export const HLSEventPipeline = new IngestPipeline<HLSEvent>("HLSEvent", {
   table: true, // Persist in ClickHouse table "HLSEvent"
   stream: true, // Buffer processed events
   ingest: false, // No direct API; only derive from PNXEvent
-});
-
-/** Legacy pipelines for backward compatibility */
-export const FooPipeline = new IngestPipeline<Foo>("Foo", {
-  table: false, // No table; only stream raw records
-  stream: true, // Buffer ingested records
-  ingest: true, // POST /ingest/Foo
-  deadLetterQueue: {
-    destination: deadLetterTable,
-  },
-});
-
-export const BarPipeline = new IngestPipeline<Bar>("Bar", {
-  table: true, // Persist in ClickHouse table "Bar"
-  stream: true, // Buffer processed records
-  ingest: false, // No API; only derive from processed Foo records
 });

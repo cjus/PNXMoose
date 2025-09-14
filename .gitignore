@@ -4,4 +4,6 @@ dist
 coverage
 .ts-node
 .cursor
+internal-docs
+
 

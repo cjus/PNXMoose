@@ -11,6 +11,16 @@
         "transform": "typia/lib/transform"
       }
     ],
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "incremental": false,
+    "tsBuildInfoFile": null
+  },
+  "ts-node": {
+    "transpileOnly": false,
+    "files": true,
+    "compilerOptions": {
+      "incremental": false,
+      "tsBuildInfoFile": null
+    }
   }
 }

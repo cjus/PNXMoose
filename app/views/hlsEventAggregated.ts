@@ -7,14 +7,14 @@ interface HLSEventAggregated {
   appName: string;
   eventType: string;
   stage: string;
-  totalEventsState: number & typia.tags.Type<"int64">;
-  uniqueUsersState: number & typia.tags.Type<"int64">;
-  avgBitrateState: number & typia.tags.Type<"double">;
-  maxBitrateState: number & typia.tags.Type<"int64">;
-  minBitrateState: number & typia.tags.Type<"int64">;
-  levelSwitchesState: number & typia.tags.Type<"int64">;
-  playbackStartsState: number & typia.tags.Type<"int64">;
-  avgFragmentDurationState: number & typia.tags.Type<"double">;
+  totalEventsState: number & typia.tags.Type<"uint64">;
+  uniqueUsersState: number & typia.tags.Type<"uint64">;
+  avgBitrateState: number & typia.tags.Type<"float">;
+  maxBitrateState: number & typia.tags.Type<"uint64">;
+  minBitrateState: number & typia.tags.Type<"uint64">;
+  levelSwitchesState: number & typia.tags.Type<"uint64">;
+  playbackStartsState: number & typia.tags.Type<"uint64">;
+  avgFragmentDurationState: number & typia.tags.Type<"float">;
 }
 
 const hlsTable = HLSEventPipeline.table!;

@@ -7,15 +7,15 @@ interface AnalyticsEventAggregated {
   appName: string;
   eventType: string;
   stage: string;
-  totalEventsState: number & typia.tags.Type<"int64">;
-  uniqueUsersState: number & typia.tags.Type<"int64">;
-  uniqueIPsState: number & typia.tags.Type<"int64">;
-  chromeUsersState: number & typia.tags.Type<"int64">;
-  safariUsersState: number & typia.tags.Type<"int64">;
-  firefoxUsersState: number & typia.tags.Type<"int64">;
-  macOSUsersState: number & typia.tags.Type<"int64">;
-  windowsUsersState: number & typia.tags.Type<"int64">;
-  navigationEventsState: number & typia.tags.Type<"int64">;
+  totalEventsState: number & typia.tags.Type<"uint64">;
+  uniqueUsersState: number & typia.tags.Type<"uint64">;
+  uniqueIPsState: number & typia.tags.Type<"uint64">;
+  chromeUsersState: number & typia.tags.Type<"uint64">;
+  safariUsersState: number & typia.tags.Type<"uint64">;
+  firefoxUsersState: number & typia.tags.Type<"uint64">;
+  macOSUsersState: number & typia.tags.Type<"uint64">;
+  windowsUsersState: number & typia.tags.Type<"uint64">;
+  navigationEventsState: number & typia.tags.Type<"uint64">;
 }
 
 const analyticsTable = AnalyticsEventPipeline.table!;
