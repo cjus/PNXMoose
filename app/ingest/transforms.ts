@@ -195,11 +195,13 @@ PNXEventPipeline.stream!.addTransform(
       resolution: pnxEvent.resolution,
       bandwidth: pnxEvent.bandwidth,
       fragmentDuration: pnxEvent.fragmentDuration,
-      availableLevels: pnxEvent.availableLevels
-        ? JSON.stringify(pnxEvent.availableLevels)
-        : undefined,
+      availableLevelsJson: (pnxEvent as any).availableLevels
+        ? JSON.stringify((pnxEvent as any).availableLevels)
+        : pnxEvent.availableLevelsJson,
       totalLevels: pnxEvent.totalLevels,
-      detail: pnxEvent.detail ? JSON.stringify(pnxEvent.detail) : undefined,
+      detailJson: (pnxEvent as any).detail
+        ? JSON.stringify((pnxEvent as any).detail)
+        : pnxEvent.detailJson,
       timestamp: new Date(pnxEvent.requestTimeEpoch),
       domainName: pnxEvent.domainName,
       stage: pnxEvent.stage,
@@ -250,9 +252,9 @@ PNXEventPipeline.stream!.addTransform(
       action: pnxEvent.action,
       href: pnxEvent.href,
       eventName: pnxEvent.eventName,
-      eventProps: pnxEvent.eventProps
-        ? JSON.stringify(pnxEvent.eventProps)
-        : undefined,
+      eventPropsJson: (pnxEvent as any).eventProps
+        ? JSON.stringify((pnxEvent as any).eventProps)
+        : pnxEvent.eventPropsJson,
       timestamp: new Date(pnxEvent.requestTimeEpoch),
       domainName: pnxEvent.domainName,
       stage: pnxEvent.stage,
@@ -332,8 +334,10 @@ PNXEventPipeline.stream!.addTransform(
     const { browserName, operatingSystem } = parseUserAgent(pnxEvent.userAgent);
 
     // Extract additional metric data (exclude base fields)
-    const metricData: any = pnxEvent.metricData
-      ? (pnxEvent.metricData as any)
+    const parsedMetric: Record<string, unknown> = (pnxEvent as any).metricData
+      ? ((pnxEvent as any).metricData as Record<string, unknown>)
+      : pnxEvent.metricDataJson
+      ? (JSON.parse(pnxEvent.metricDataJson) as Record<string, unknown>)
       : {};
     const baseFields = [
       "eventId",
@@ -359,9 +363,9 @@ PNXEventPipeline.stream!.addTransform(
       "stackTrace",
     ];
 
-    Object.keys(pnxEvent).forEach((key) => {
-      if (!baseFields.includes(key) && (pnxEvent as any)[key] !== undefined) {
-        metricData[key] = (pnxEvent as any)[key];
+    (Object.keys(pnxEvent) as Array<keyof PNXEvent>).forEach((key) => {
+      if (!baseFields.includes(key as string) && pnxEvent[key] !== undefined) {
+        (parsedMetric as any)[key] = pnxEvent[key];
       }
     });
 
@@ -373,7 +377,7 @@ PNXEventPipeline.stream!.addTransform(
       sessionId: pnxEvent.sessionId,
       eventType: pnxEvent.event,
       description: pnxEvent.description,
-      metricData: JSON.stringify(metricData),
+      metricDataJson: JSON.stringify(parsedMetric),
       timestamp: new Date(pnxEvent.requestTimeEpoch),
       domainName: pnxEvent.domainName,
       stage: pnxEvent.stage,

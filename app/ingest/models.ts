@@ -34,13 +34,13 @@ export interface PNXEvent {
   bandwidth?: number;
   fragmentDuration?: number;
   // Additional HLS diagnostics/metadata (optional)
-  availableLevels?: any; // forwarded raw; transformed to JSON string downstream
+  availableLevelsJson?: string; // JSON of array/object
   totalLevels?: number;
-  detail?: any; // forwarded raw; transformed to JSON string downstream
+  detailJson?: string; // JSON of detail payloads
   // Navigation-specific fields (optional)
   action?: string; // e.g., "nav_link_clicked"
   eventName?: string; // For tracked links
-  eventProps?: any; // Additional event properties
+  eventPropsJson?: string; // JSON of additional event properties
   // Authentication-specific fields (optional)
   method?: string; // e.g., "email_password", "google_oauth"
   // Error-specific fields (optional)
@@ -51,7 +51,7 @@ export interface PNXEvent {
   message?: string; // Legacy error message
   stack?: string; // Legacy error stack trace
   // Metric-specific (optional)
-  metricData?: unknown; // Preferred: arbitrary metric payload
+  metricDataJson?: string; // JSON of arbitrary metric payload
   // Request metadata
   requestTimeEpoch: number;
   domainName: string;
@@ -98,9 +98,9 @@ export interface HLSEvent {
   bandwidth?: number;
   fragmentDuration?: number;
   // Additional HLS diagnostics/metadata
-  availableLevels?: string; // JSON stringified array of available ABR levels
+  availableLevelsJson?: string; // JSON stringified array of available ABR levels
   totalLevels?: number;
-  detail?: string; // JSON stringified error/detail payloads
+  detailJson?: string; // JSON stringified error/detail payloads
   timestamp: Date; // From requestTimeEpoch
   domainName: string;
   stage: string;
@@ -122,7 +122,7 @@ export interface NavigationEvent {
   action?: string; // From message.action
   href?: string; // From message.href
   eventName?: string; // From message.eventName
-  eventProps?: string; // JSON stringified eventProps
+  eventPropsJson?: string; // JSON stringified eventProps
   timestamp: Date; // From requestTimeEpoch
   domainName: string;
   stage: string;
@@ -161,7 +161,7 @@ export interface MetricEvent {
   sessionId: string;
   eventType: string; // From message.event
   description?: string; // Optional human readable description
-  metricData: string; // JSON stringified additional metric properties
+  metricDataJson: string; // JSON stringified additional metric properties
   timestamp: Date; // From requestTimeEpoch
   domainName: string;
   stage: string;
