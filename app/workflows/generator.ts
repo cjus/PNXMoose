@@ -29,30 +29,57 @@ export const ingest = new Task<null, void>("ingest", {
 
       const pnxEvent: PNXEvent = {
         eventId: randomUUID(),
-        appName: faker.helpers.arrayElement(["pnxplayer", "PNXStudios-Website"]),
+        appName: faker.helpers.arrayElement([
+          "pnxplayer",
+          "PNXStudios-Website",
+        ]),
         appVersion: faker.system.semver(),
         userId: faker.internet.email(),
+        sessionId: faker.string.uuid(),
         type: eventType,
         event:
           eventType === "analytics"
-            ? faker.helpers.arrayElement(["panel-close", "play", "pause", "mark-start"])
+            ? faker.helpers.arrayElement([
+                "panel-close",
+                "play",
+                "pause",
+                "mark-start",
+              ])
             : eventType === "hls"
-              ? faker.helpers.arrayElement(["level-switched", "playback-started", "buffer-stalled"])
-              : eventType === "navigation"
-                ? faker.helpers.arrayElement(["nav_link_clicked", "tracked_link_clicked"])
-                : eventType === "authentication"
-                  ? faker.helpers.arrayElement(["login_success", "logout", "signup_success"])
-                  : eventType === "metric"
-                    ? faker.helpers.arrayElement(["page_load_time", "api_response_time"])
-                    : "javascript_error",
+            ? faker.helpers.arrayElement([
+                "level-switched",
+                "playback-started",
+                "buffer-stalled",
+              ])
+            : eventType === "navigation"
+            ? faker.helpers.arrayElement([
+                "nav_link_clicked",
+                "tracked_link_clicked",
+              ])
+            : eventType === "authentication"
+            ? faker.helpers.arrayElement([
+                "login_success",
+                "logout",
+                "signup_success",
+              ])
+            : eventType === "metric"
+            ? faker.helpers.arrayElement([
+                "page_load_time",
+                "api_response_time",
+              ])
+            : "javascript_error",
 
         // Common optional fields
         videoId: Math.random() < 0.4 ? faker.string.uuid() : undefined,
 
         // Analytics-specific fields
-        source: eventType === "analytics" && Math.random() < 0.5 ? "panel-manager" : undefined,
+        source:
+          eventType === "analytics" && Math.random() < 0.5
+            ? "panel-manager"
+            : undefined,
         href:
-          (eventType === "analytics" || eventType === "navigation") && Math.random() < 0.3
+          (eventType === "analytics" || eventType === "navigation") &&
+          Math.random() < 0.3
             ? faker.internet.url()
             : undefined,
 
@@ -85,7 +112,10 @@ export const ingest = new Task<null, void>("ingest", {
         // Navigation-specific fields
         action:
           eventType === "navigation"
-            ? faker.helpers.arrayElement(["nav_link_clicked", "tracked_link_clicked"])
+            ? faker.helpers.arrayElement([
+                "nav_link_clicked",
+                "tracked_link_clicked",
+              ])
             : undefined,
         eventName:
           eventType === "navigation" && Math.random() < 0.5
@@ -107,7 +137,10 @@ export const ingest = new Task<null, void>("ingest", {
                 "Timeout error",
               ])
             : undefined,
-        stack: eventType === "error" && Math.random() < 0.7 ? faker.lorem.sentences(3) : undefined,
+        stack:
+          eventType === "error" && Math.random() < 0.7
+            ? faker.lorem.sentences(3)
+            : undefined,
 
         // Request metadata
         requestTimeEpoch: Date.now(),
@@ -127,7 +160,9 @@ export const ingest = new Task<null, void>("ingest", {
         });
 
         if (!response.ok) {
-          console.log(`Failed to ingest record ${i}: ${response.status} ${response.statusText}`);
+          console.log(
+            `Failed to ingest record ${i}: ${response.status} ${response.statusText}`
+          );
           // Insert ingestion result into OLAP table
           // workflowTable.insert([
           //   { id: "1", success: false, message: response.statusText },

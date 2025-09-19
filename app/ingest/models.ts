@@ -19,8 +19,12 @@ export interface PNXEvent {
   event: string;
   description?: string; // Human readable description of the event
   // Analytics-specific fields (optional)
+  // New normalized fields from ingest
+  eventSource?: string; // Preferred: normalized analytics source
+  navigationHref?: string; // Preferred: normalized navigation href
+  // Backward-compatibility with older producers/ingestors
   source?: string; // e.g., "panel-manager". If not provided, will be auto-derived from appName
-  href?: string; // For navigation events
+  href?: string; // Legacy navigation href
   videoId?: string; // Video identifier for analytics and HLS events
   // HLS video-specific fields (optional)
   level?: number;
@@ -40,8 +44,14 @@ export interface PNXEvent {
   // Authentication-specific fields (optional)
   method?: string; // e.g., "email_password", "google_oauth"
   // Error-specific fields (optional)
-  message?: string; // Error message
-  stack?: string; // Error stack trace
+  // New normalized error fields
+  errorMessage?: string; // Preferred
+  stackTrace?: string; // Preferred
+  // Backward-compatibility
+  message?: string; // Legacy error message
+  stack?: string; // Legacy error stack trace
+  // Metric-specific (optional)
+  metricData?: unknown; // Preferred: arbitrary metric payload
   // Request metadata
   requestTimeEpoch: number;
   domainName: string;

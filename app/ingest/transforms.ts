@@ -121,7 +121,8 @@ PNXEventPipeline.stream!.addTransform(
     const { browserName, operatingSystem } = parseUserAgent(pnxEvent.userAgent);
 
     // Auto-derive eventSource from appName and event context when source is not provided
-    const eventSource = pnxEvent.source || deriveEventSource(pnxEvent);
+    const eventSource =
+      pnxEvent.eventSource || pnxEvent.source || deriveEventSource(pnxEvent);
 
     const result: AnalyticsEvent = {
       eventId: pnxEvent.eventId,
@@ -132,7 +133,7 @@ PNXEventPipeline.stream!.addTransform(
       eventType: pnxEvent.event,
       description: pnxEvent.description,
       eventSource,
-      navigationHref: pnxEvent.href,
+      navigationHref: pnxEvent.navigationHref || pnxEvent.href,
       videoId: pnxEvent.videoId,
       timestamp: new Date(pnxEvent.requestTimeEpoch),
       domainName: pnxEvent.domainName,
@@ -331,20 +332,31 @@ PNXEventPipeline.stream!.addTransform(
     const { browserName, operatingSystem } = parseUserAgent(pnxEvent.userAgent);
 
     // Extract additional metric data (exclude base fields)
-    const metricData: any = {};
+    const metricData: any = pnxEvent.metricData
+      ? (pnxEvent.metricData as any)
+      : {};
     const baseFields = [
       "eventId",
       "appName",
       "appVersion",
       "userId",
+      "sessionId",
       "type",
       "event",
       "description",
+      "eventSource",
+      "source",
+      "navigationHref",
+      "href",
       "requestTimeEpoch",
       "domainName",
       "stage",
       "sourceIp",
       "userAgent",
+      "message",
+      "stack",
+      "errorMessage",
+      "stackTrace",
     ];
 
     Object.keys(pnxEvent).forEach((key) => {
@@ -403,9 +415,10 @@ PNXEventPipeline.stream!.addTransform(
       userId: pnxEvent.userId,
       sessionId: pnxEvent.sessionId,
       eventType: pnxEvent.event,
-      description: pnxEvent.description ?? pnxEvent.message,
-      errorMessage: pnxEvent.message,
-      stackTrace: pnxEvent.stack,
+      description:
+        pnxEvent.description ?? pnxEvent.errorMessage ?? pnxEvent.message,
+      errorMessage: pnxEvent.errorMessage ?? pnxEvent.message,
+      stackTrace: pnxEvent.stackTrace ?? pnxEvent.stack,
       timestamp: new Date(pnxEvent.requestTimeEpoch),
       domainName: pnxEvent.domainName,
       stage: pnxEvent.stage,
