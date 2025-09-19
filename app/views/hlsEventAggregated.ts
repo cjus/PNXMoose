@@ -7,6 +7,7 @@ interface HLSEventAggregated {
   appName: string;
   eventType: string;
   stage: string;
+  uniqueSessionsState: number & typia.tags.Type<"uint64">;
   totalEventsState: number & typia.tags.Type<"uint64">;
   uniqueUsersState: number & typia.tags.Type<"uint64">;
   avgBitrateState: number & typia.tags.Type<"float">;
@@ -18,7 +19,7 @@ interface HLSEventAggregated {
 }
 
 const hlsTable = HLSEventPipeline.table!;
-const hlsColumns = hlsTable.columns;
+// const hlsColumns = hlsTable.columns;
 
 export const HLSEventAggregatedMV = new MaterializedView<HLSEventAggregated>({
   tableName: "HLSEventAggregated",
@@ -29,6 +30,7 @@ export const HLSEventAggregatedMV = new MaterializedView<HLSEventAggregated>({
     appName,
     eventType,
     stage,
+    uniqState(sessionId) as uniqueSessionsState,
     countState(*) as totalEventsState,
     uniqState(userId) as uniqueUsersState,
     avgState(bitrate) as avgBitrateState,

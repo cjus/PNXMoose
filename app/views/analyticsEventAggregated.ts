@@ -7,6 +7,8 @@ interface AnalyticsEventAggregated {
   appName: string;
   eventType: string;
   stage: string;
+  // session granularity metrics
+  uniqueSessionsState: number & typia.tags.Type<"uint64">;
   totalEventsState: number & typia.tags.Type<"uint64">;
   uniqueUsersState: number & typia.tags.Type<"uint64">;
   uniqueIPsState: number & typia.tags.Type<"uint64">;
@@ -19,7 +21,7 @@ interface AnalyticsEventAggregated {
 }
 
 const analyticsTable = AnalyticsEventPipeline.table!;
-const analyticsColumns = analyticsTable.columns;
+// const analyticsColumns = analyticsTable.columns;
 
 export const AnalyticsEventAggregatedMV =
   new MaterializedView<AnalyticsEventAggregated>({
@@ -31,6 +33,7 @@ export const AnalyticsEventAggregatedMV =
     appName,
     eventType,
     stage,
+    uniqState(sessionId) as uniqueSessionsState,
     countState(*) as totalEventsState,
     uniqState(userId) as uniqueUsersState,
     uniqState(sourceIp) as uniqueIPsState,
