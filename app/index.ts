@@ -6,5 +6,5 @@ export * from "./ingest/transforms";
 // export * from "./apis/hls";
 // export * from "./views/analyticsEventAggregated";
 // export * from "./views/hlsEventAggregated";
-export * from "./workflows/generator";
-export * from "./apis/workflow";
+export * from "./views/metricPlaybackSpanAggregated";
+export * from "./apis/metrics";

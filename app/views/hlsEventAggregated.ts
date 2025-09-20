@@ -8,6 +8,8 @@ interface HLSEventAggregated {
   eventType: string;
   stage: string;
   uniqueSessionsState: number & typia.tags.Type<"uint64">;
+  uniqueVisitorsState: number & typia.tags.Type<"uint64">;
+  uniquePageviewsState: number & typia.tags.Type<"uint64">;
   totalEventsState: number & typia.tags.Type<"uint64">;
   uniqueUsersState: number & typia.tags.Type<"uint64">;
   avgBitrateState: number & typia.tags.Type<"float">;
@@ -31,6 +33,8 @@ export const HLSEventAggregatedMV = new MaterializedView<HLSEventAggregated>({
     eventType,
     stage,
     uniqState(sessionId) as uniqueSessionsState,
+    uniqState(visitorId) as uniqueVisitorsState,
+    uniqState(pageviewId) as uniquePageviewsState,
     countState(*) as totalEventsState,
     uniqState(userId) as uniqueUsersState,
     avgState(bitrate) as avgBitrateState,

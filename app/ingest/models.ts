@@ -15,6 +15,8 @@ export interface PNXEvent {
   appVersion: string;
   userId: string;
   sessionId: string; // normalized from session_id/sessionId; "undefined" if not provided by website
+  visitorId?: string; // from visitor_id
+  pageviewId?: string; // from pageview_id
   type: string;
   event: string;
   description?: string; // Human readable description of the event
@@ -67,6 +69,8 @@ export interface AnalyticsEvent {
   appVersion: string;
   userId: string;
   sessionId: string;
+  visitorId?: string;
+  pageviewId?: string;
   eventType: string; // From message.event
   description?: string; // Optional human readable description
   eventSource?: string; // From message.source or auto-derived from appName/event context
@@ -88,6 +92,8 @@ export interface HLSEvent {
   appVersion: string;
   userId: string;
   sessionId: string;
+  visitorId?: string;
+  pageviewId?: string;
   eventType: string; // From message.event
   description?: string; // Optional human readable description
   level?: number;
@@ -110,28 +116,6 @@ export interface HLSEvent {
   operatingSystem?: string; // Parsed from userAgent
 }
 
-/** Processed navigation event */
-export interface NavigationEvent {
-  eventId: Key<string>; // From PNXEvent.eventId
-  appName: string;
-  appVersion: string;
-  userId: string;
-  sessionId: string;
-  eventType: string; // From message.event
-  description?: string; // Optional human readable description
-  action?: string; // From message.action
-  href?: string; // From message.href
-  eventName?: string; // From message.eventName
-  eventPropsJson?: string; // JSON stringified eventProps
-  timestamp: Date; // From requestTimeEpoch
-  domainName: string;
-  stage: string;
-  sourceIp: string;
-  userAgent: string;
-  browserName?: string; // Parsed from userAgent
-  operatingSystem?: string; // Parsed from userAgent
-}
-
 /** Processed authentication event */
 export interface AuthenticationEvent {
   eventId: Key<string>; // From PNXEvent.eventId
@@ -139,6 +123,8 @@ export interface AuthenticationEvent {
   appVersion: string;
   userId: string;
   sessionId: string;
+  visitorId?: string;
+  pageviewId?: string;
   eventType: string; // From message.event
   description?: string; // Optional human readable description
   action?: string; // From message.action
@@ -159,6 +145,9 @@ export interface MetricEvent {
   appVersion: string;
   userId: string;
   sessionId: string;
+  visitorId?: string;
+  pageviewId?: string;
+  videoId?: string; // Promote common field for metrics (e.g., playback spans)
   eventType: string; // From message.event
   description?: string; // Optional human readable description
   metricDataJson: string; // JSON stringified additional metric properties
@@ -178,10 +167,21 @@ export interface ErrorEvent {
   appVersion: string;
   userId: string;
   sessionId: string;
+  visitorId?: string;
+  pageviewId?: string;
   eventType: string; // From message.event
-  description?: string; // Optional human readable description
+  description?: string; // Optional human readable description (derived)
   errorMessage?: string; // From message.message
   stackTrace?: string; // From message.stack
+  // Derived enrichment
+  errorClass?: string;
+  fileName?: string;
+  line?: number;
+  column?: number;
+  urlPath?: string;
+  dedupeKey?: string;
+  severity?: string;
+  contextJson?: string; // any extra context captured at producer or inferred here
   timestamp: Date; // From requestTimeEpoch
   domainName: string;
   stage: string;
@@ -229,15 +229,7 @@ export const HLSEventPipeline = new IngestPipeline<HLSEvent>("HLSEvent", {
   ingest: false, // No direct API; only derive from PNXEvent
 });
 
-/** Navigation events processing and storage */
-export const NavigationEventPipeline = new IngestPipeline<NavigationEvent>(
-  "NavigationEvent",
-  {
-    table: true, // Persist in ClickHouse table "NavigationEvent"
-    stream: true, // Buffer processed events
-    ingest: false, // No direct API; only derive from PNXEvent
-  }
-);
+// (NavigationEvent removed) Navigation is now represented as AnalyticsEvent with source="website-navigation"
 
 /** Authentication events processing and storage */
 export const AuthenticationEventPipeline =

@@ -9,6 +9,8 @@ interface AnalyticsEventAggregated {
   stage: string;
   // session granularity metrics
   uniqueSessionsState: number & typia.tags.Type<"uint64">;
+  uniqueVisitorsState: number & typia.tags.Type<"uint64">;
+  uniquePageviewsState: number & typia.tags.Type<"uint64">;
   totalEventsState: number & typia.tags.Type<"uint64">;
   uniqueUsersState: number & typia.tags.Type<"uint64">;
   uniqueIPsState: number & typia.tags.Type<"uint64">;
@@ -34,6 +36,8 @@ export const AnalyticsEventAggregatedMV =
     eventType,
     stage,
     uniqState(sessionId) as uniqueSessionsState,
+    uniqState(visitorId) as uniqueVisitorsState,
+    uniqState(pageviewId) as uniquePageviewsState,
     countState(*) as totalEventsState,
     uniqState(userId) as uniqueUsersState,
     uniqState(sourceIp) as uniqueIPsState,

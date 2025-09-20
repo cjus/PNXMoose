@@ -2,19 +2,20 @@ import {
   PNXEventPipeline,
   AnalyticsEventPipeline,
   HLSEventPipeline,
-  NavigationEventPipeline,
+  // NavigationEventPipeline, // removed; navigation is analytics
   AuthenticationEventPipeline,
   MetricEventPipeline,
   ErrorEventPipeline,
   PNXEvent,
   AnalyticsEvent,
   HLSEvent,
-  NavigationEvent,
+  // NavigationEvent, // removed
   AuthenticationEvent,
   MetricEvent,
   ErrorEvent,
 } from "./models";
 import { MooseCache } from "@514labs/moose-lib";
+import { createHash } from "node:crypto";
 
 /** =======PNX Event Processing========= */
 
@@ -113,10 +114,7 @@ PNXEventPipeline.stream!.addTransform(
 
     // Check cache first
     const cached = await cache.get<AnalyticsEvent>(cacheKey);
-    if (cached) {
-      console.log(`Using cached analytics result for ${pnxEvent.eventId}`);
-      return cached;
-    }
+    if (cached) return null;
 
     const { browserName, operatingSystem } = parseUserAgent(pnxEvent.userAgent);
 
@@ -130,6 +128,8 @@ PNXEventPipeline.stream!.addTransform(
       appVersion: pnxEvent.appVersion,
       userId: pnxEvent.userId,
       sessionId: pnxEvent.sessionId,
+      visitorId: pnxEvent.visitorId,
+      pageviewId: pnxEvent.pageviewId,
       eventType: pnxEvent.event,
       description: pnxEvent.description,
       eventSource,
@@ -173,10 +173,7 @@ PNXEventPipeline.stream!.addTransform(
 
     // Check cache first
     const cached = await cache.get<HLSEvent>(cacheKey);
-    if (cached) {
-      console.log(`Using cached HLS result for ${pnxEvent.eventId}`);
-      return cached;
-    }
+    if (cached) return null;
 
     const { browserName, operatingSystem } = parseUserAgent(pnxEvent.userAgent);
 
@@ -186,6 +183,8 @@ PNXEventPipeline.stream!.addTransform(
       appVersion: pnxEvent.appVersion,
       userId: pnxEvent.userId,
       sessionId: pnxEvent.sessionId,
+      visitorId: pnxEvent.visitorId,
+      pageviewId: pnxEvent.pageviewId,
       eventType: pnxEvent.event,
       description: pnxEvent.description,
       level: pnxEvent.level,
@@ -221,53 +220,7 @@ PNXEventPipeline.stream!.addTransform(
   // }
 );
 
-// Transform PNX events to Navigation events (for navigation type events)
-PNXEventPipeline.stream!.addTransform(
-  NavigationEventPipeline.stream!,
-  async (pnxEvent: PNXEvent): Promise<NavigationEvent | null> => {
-    // Only process navigation events
-    if (pnxEvent.type !== "navigation") {
-      return null;
-    }
-
-    const cache = await MooseCache.get();
-    const cacheKey = `navigation:${pnxEvent.eventId}`;
-
-    const cached = await cache.get<NavigationEvent>(cacheKey);
-    if (cached) {
-      console.log(`Using cached navigation result for ${pnxEvent.eventId}`);
-      return cached;
-    }
-
-    const { browserName, operatingSystem } = parseUserAgent(pnxEvent.userAgent);
-
-    const result: NavigationEvent = {
-      eventId: pnxEvent.eventId,
-      appName: pnxEvent.appName,
-      appVersion: pnxEvent.appVersion,
-      userId: pnxEvent.userId,
-      sessionId: pnxEvent.sessionId,
-      eventType: pnxEvent.event,
-      description: pnxEvent.description,
-      action: pnxEvent.action,
-      href: pnxEvent.href,
-      eventName: pnxEvent.eventName,
-      eventPropsJson: (pnxEvent as any).eventProps
-        ? JSON.stringify((pnxEvent as any).eventProps)
-        : pnxEvent.eventPropsJson,
-      timestamp: new Date(pnxEvent.requestTimeEpoch),
-      domainName: pnxEvent.domainName,
-      stage: pnxEvent.stage,
-      sourceIp: pnxEvent.sourceIp,
-      userAgent: pnxEvent.userAgent,
-      browserName,
-      operatingSystem,
-    };
-
-    await cache.set(cacheKey, result, 3600);
-    return result;
-  }
-);
+// (Navigation transform removed) Navigation is now represented as AnalyticsEvent
 
 // Transform PNX events to Authentication events (for authentication type events)
 PNXEventPipeline.stream!.addTransform(
@@ -282,10 +235,7 @@ PNXEventPipeline.stream!.addTransform(
     const cacheKey = `auth:${pnxEvent.eventId}`;
 
     const cached = await cache.get<AuthenticationEvent>(cacheKey);
-    if (cached) {
-      console.log(`Using cached authentication result for ${pnxEvent.eventId}`);
-      return cached;
-    }
+    if (cached) return null;
 
     const { browserName, operatingSystem } = parseUserAgent(pnxEvent.userAgent);
 
@@ -295,6 +245,8 @@ PNXEventPipeline.stream!.addTransform(
       appVersion: pnxEvent.appVersion,
       userId: pnxEvent.userId,
       sessionId: pnxEvent.sessionId,
+      visitorId: pnxEvent.visitorId,
+      pageviewId: pnxEvent.pageviewId,
       eventType: pnxEvent.event,
       description: pnxEvent.description,
       action: pnxEvent.action,
@@ -326,10 +278,7 @@ PNXEventPipeline.stream!.addTransform(
     const cacheKey = `metric:${pnxEvent.eventId}`;
 
     const cached = await cache.get<MetricEvent>(cacheKey);
-    if (cached) {
-      console.log(`Using cached metric result for ${pnxEvent.eventId}`);
-      return cached;
-    }
+    if (cached) return null;
 
     const { browserName, operatingSystem } = parseUserAgent(pnxEvent.userAgent);
 
@@ -345,6 +294,8 @@ PNXEventPipeline.stream!.addTransform(
       "appVersion",
       "userId",
       "sessionId",
+      "visitorId",
+      "pageviewId",
       "type",
       "event",
       "description",
@@ -375,6 +326,9 @@ PNXEventPipeline.stream!.addTransform(
       appVersion: pnxEvent.appVersion,
       userId: pnxEvent.userId,
       sessionId: pnxEvent.sessionId,
+      visitorId: pnxEvent.visitorId,
+      pageviewId: pnxEvent.pageviewId,
+      videoId: (pnxEvent as any).videoId,
       eventType: pnxEvent.event,
       description: pnxEvent.description,
       metricDataJson: JSON.stringify(parsedMetric),
@@ -405,12 +359,68 @@ PNXEventPipeline.stream!.addTransform(
     const cacheKey = `error:${pnxEvent.eventId}`;
 
     const cached = await cache.get<ErrorEvent>(cacheKey);
-    if (cached) {
-      console.log(`Using cached error result for ${pnxEvent.eventId}`);
-      return cached;
-    }
+    if (cached) return null;
 
     const { browserName, operatingSystem } = parseUserAgent(pnxEvent.userAgent);
+
+    // === Derivation helpers ===
+    const rawMessage = (pnxEvent as any).message as string | undefined;
+    const rawStack = (pnxEvent as any).stack as string | undefined;
+
+    // Simple classifier
+    const classify = (message?: string, stack?: string): string => {
+      if (message && message.includes("play() request was interrupted"))
+        return "media_play_interrupted";
+      if (message && message.toLowerCase().includes("network"))
+        return "network_error";
+      if (message && message.toLowerCase().includes("timeout"))
+        return "timeout_error";
+      if (stack && stack.startsWith("TypeError"))
+        return "javascript_type_error";
+      if (stack && stack.startsWith("ReferenceError"))
+        return "javascript_reference_error";
+      return "javascript_error";
+    };
+
+    // Parse top frame from stack
+    let fileName: string | undefined;
+    let line: number | undefined;
+    let column: number | undefined;
+    if (rawStack) {
+      const lines = rawStack.split(/\n+/);
+      const top = lines.find(
+        (l) => l.includes(":") && (l.includes("/") || l.includes("\\"))
+      );
+      if (top) {
+        const match =
+          top.match(/(\/[^\s\)]+):(\d+):(\d+)/) ||
+          top.match(/(\w:\\[^\s\)]+):(\d+):(\d+)/);
+        if (match) {
+          fileName = match[1];
+          line = Number(match[2]);
+          column = Number(match[3]);
+        }
+      }
+    }
+
+    const eventType = classify(rawMessage, rawStack);
+    const urlPath = (pnxEvent as any).href
+      ? String((pnxEvent as any).href).replace(/^https?:\/\/[^/]+/, "")
+      : undefined;
+    const description =
+      [eventType, fileName && `${fileName}:${line}:${column}`]
+        .filter(Boolean)
+        .join(" – ") ||
+      rawMessage ||
+      undefined;
+    const dedupeKey =
+      [eventType, fileName, line, column].filter(Boolean).join("|") ||
+      undefined;
+    const severity: "info" | "warn" | "error" = eventType.includes(
+      "interrupted"
+    )
+      ? "warn"
+      : "error";
 
     const result: ErrorEvent = {
       eventId: pnxEvent.eventId,
@@ -418,11 +428,20 @@ PNXEventPipeline.stream!.addTransform(
       appVersion: pnxEvent.appVersion,
       userId: pnxEvent.userId,
       sessionId: pnxEvent.sessionId,
-      eventType: pnxEvent.event,
-      description:
-        pnxEvent.description ?? pnxEvent.errorMessage ?? pnxEvent.message,
-      errorMessage: pnxEvent.errorMessage ?? pnxEvent.message,
-      stackTrace: pnxEvent.stackTrace ?? pnxEvent.stack,
+      visitorId: pnxEvent.visitorId,
+      pageviewId: pnxEvent.pageviewId,
+      eventType,
+      description,
+      errorMessage: pnxEvent.errorMessage ?? rawMessage,
+      stackTrace: pnxEvent.stackTrace ?? rawStack,
+      errorClass: rawStack ? rawStack.split(":")[0] : undefined,
+      fileName,
+      line,
+      column,
+      urlPath,
+      dedupeKey,
+      severity,
+      contextJson: undefined,
       timestamp: new Date(pnxEvent.requestTimeEpoch),
       domainName: pnxEvent.domainName,
       stage: pnxEvent.stage,
@@ -437,23 +456,8 @@ PNXEventPipeline.stream!.addTransform(
   }
 );
 
-// Add consumers to log incoming PNX events
-const printPNXEvent = (pnxEvent: PNXEvent): void => {
-  console.log("Received PNX event:");
-  console.log(`  Event ID: ${pnxEvent.eventId}`);
-  console.log(`  App: ${pnxEvent.appName} v${pnxEvent.appVersion}`);
-  console.log(`  User: ${pnxEvent.userId}`);
-  console.log(`  Type: ${pnxEvent.type}`);
-  console.log(`  Event: ${pnxEvent.event}`);
-  console.log(`  Stage: ${pnxEvent.stage}`);
-  console.log(`  Timestamp: ${new Date(pnxEvent.requestTimeEpoch)}`);
-  if (pnxEvent.videoId) {
-    console.log(`  Video ID: ${pnxEvent.videoId}`);
-  }
-  console.log("---");
-};
-
-PNXEventPipeline.stream!.addConsumer(printPNXEvent);
+// Minimal consumer retained for potential future hooks; no noisy logs
+PNXEventPipeline.stream!.addConsumer(() => {});
 
 // DLQ consumer for PNX events
 // PNXEventPipeline.deadLetterQueue!.addConsumer((deadLetter) => {
