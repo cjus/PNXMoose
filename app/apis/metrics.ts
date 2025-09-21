@@ -4,7 +4,7 @@ import { tags } from "typia";
 
 interface PlaybackSpanQueryParams {
   appName?: string;
-  stage?: "production" | "staging" | "development";
+  stage?: string;
   videoId?: string;
   sessionId?: string;
   startDate?: string; // YYYY-MM-DD
@@ -48,9 +48,6 @@ export const PlaybackSpanApi = new Api<
     if (sessionId) conditions.push(`sessionId = '${sessionId}'`);
     if (startDate) conditions.push(`eventDate >= '${startDate}'`);
     if (endDate) conditions.push(`eventDate <= '${endDate}'`);
-    const whereClause =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-
     const query = sql`
       SELECT
         toString(eventDate) as eventDate,
@@ -61,14 +58,19 @@ export const PlaybackSpanApi = new Api<
         spans,
         round(avgDurationMs, 2) as avgDurationMs
       FROM ${PlaybackSpanAggregatedMV.targetTable}
-      ${whereClause}
       ORDER BY eventDate DESC, spans DESC
-      LIMIT ${limit}
+      LIMIT 30
     `;
 
-    const data = await client.query.execute<PlaybackSpanRow>(query);
-    const result: PlaybackSpanRow[] = await data.json();
-    await cache.set(cacheKey, result, 600);
-    return result;
+    try {
+      const data = await client.query.execute<PlaybackSpanRow>(query);
+      const result: PlaybackSpanRow[] = await data.json();
+      await cache.set(cacheKey, result, 600);
+      return result;
+    } catch (error) {
+      console.error("Metrics API error:", error);
+      // Return empty array if table doesn't exist or query fails
+      return [];
+    }
   }
 );

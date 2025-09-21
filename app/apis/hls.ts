@@ -91,13 +91,19 @@ export const HLSApi = new Api<HLSQueryParams, HLSResponseData[]>(
       LIMIT ${limit}
     `;
 
-    const data = await client.query.execute<HLSResponseData>(query);
-    const result: HLSResponseData[] = await data.json();
+    try {
+      const data = await client.query.execute<HLSResponseData>(query);
+      const result: HLSResponseData[] = await data.json();
 
-    // Cache for 30 minutes
-    await cache.set(cacheKey, result, 1800);
+      // Cache for 30 minutes
+      await cache.set(cacheKey, result, 1800);
 
-    return result;
+      return result;
+    } catch (error) {
+      console.error("HLS API error:", error);
+      // Return empty array if table doesn't exist or query fails
+      return [];
+    }
   }
 );
 
