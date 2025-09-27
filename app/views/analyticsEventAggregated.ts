@@ -7,19 +7,19 @@ interface AnalyticsEventAggregated {
   appName: string;
   eventType: string;
   stage: string;
-  // session granularity metrics
-  uniqueSessionsState: number & typia.tags.Type<"uint64">;
-  uniqueVisitorsState: number & typia.tags.Type<"uint64">;
-  uniquePageviewsState: number & typia.tags.Type<"uint64">;
-  totalEventsState: number & typia.tags.Type<"uint64">;
-  uniqueUsersState: number & typia.tags.Type<"uint64">;
-  uniqueIPsState: number & typia.tags.Type<"uint64">;
-  chromeUsersState: number & typia.tags.Type<"uint64">;
-  safariUsersState: number & typia.tags.Type<"uint64">;
-  firefoxUsersState: number & typia.tags.Type<"uint64">;
-  macOSUsersState: number & typia.tags.Type<"uint64">;
-  windowsUsersState: number & typia.tags.Type<"uint64">;
-  navigationEventsState: number & typia.tags.Type<"uint64">;
+  // session granularity metrics - using aggregate function types
+  uniqueSessionsState: string; // AggregateFunction(uniq, String)
+  uniqueVisitorsState: string; // AggregateFunction(uniq, String)
+  uniquePageviewsState: string; // AggregateFunction(uniq, String)
+  totalEventsState: string; // AggregateFunction(count, *)
+  uniqueUsersState: string; // AggregateFunction(uniq, String)
+  uniqueIPsState: string; // AggregateFunction(uniq, String)
+  chromeUsersState: string; // AggregateFunction(countIf, UInt8)
+  safariUsersState: string; // AggregateFunction(countIf, UInt8)
+  firefoxUsersState: string; // AggregateFunction(countIf, UInt8)
+  macOSUsersState: string; // AggregateFunction(countIf, UInt8)
+  windowsUsersState: string; // AggregateFunction(countIf, UInt8)
+  navigationEventsState: string; // AggregateFunction(countIf, UInt8)
 }
 
 const analyticsTable = AnalyticsEventPipeline.table!;

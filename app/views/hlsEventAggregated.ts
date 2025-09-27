@@ -7,17 +7,17 @@ interface HLSEventAggregated {
   appName: string;
   eventType: string;
   stage: string;
-  uniqueSessionsState: number & typia.tags.Type<"uint64">;
-  uniqueVisitorsState: number & typia.tags.Type<"uint64">;
-  uniquePageviewsState: number & typia.tags.Type<"uint64">;
-  totalEventsState: number & typia.tags.Type<"uint64">;
-  uniqueUsersState: number & typia.tags.Type<"uint64">;
-  avgBitrateState: number & typia.tags.Type<"float">;
-  maxBitrateState: number & typia.tags.Type<"uint64">;
-  minBitrateState: number & typia.tags.Type<"uint64">;
-  levelSwitchesState: number & typia.tags.Type<"uint64">;
-  playbackStartsState: number & typia.tags.Type<"uint64">;
-  avgFragmentDurationState: number & typia.tags.Type<"float">;
+  uniqueSessionsState: string; // AggregateFunction(uniq, String)
+  uniqueVisitorsState: string; // AggregateFunction(uniq, String)
+  uniquePageviewsState: string; // AggregateFunction(uniq, String)
+  totalEventsState: string; // AggregateFunction(count, *)
+  uniqueUsersState: string; // AggregateFunction(uniq, String)
+  avgBitrateState: string; // AggregateFunction(avg, UInt64)
+  maxBitrateState: string; // AggregateFunction(max, UInt64)
+  minBitrateState: string; // AggregateFunction(min, UInt64)
+  levelSwitchesState: string; // AggregateFunction(countIf, UInt8)
+  playbackStartsState: string; // AggregateFunction(countIf, UInt8)
+  avgFragmentDurationState: string; // AggregateFunction(avg, Float64)
 }
 
 const hlsTable = HLSEventPipeline.table!;
