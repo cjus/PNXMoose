@@ -1,5 +1,4 @@
 import { Api, MooseCache } from "@514labs/moose-lib";
-import { PlaybackSpanAggregatedMV } from "../views/metricPlaybackSpanAggregated";
 import { tags } from "typia";
 
 interface PlaybackSpanQueryParams {
@@ -46,18 +45,20 @@ export const PlaybackSpanApi = new Api<
     if (stage) conditions.push(`stage = '${stage}'`);
     if (videoId) conditions.push(`videoId = '${videoId}'`);
     if (sessionId) conditions.push(`sessionId = '${sessionId}'`);
-    if (startDate) conditions.push(`eventDate >= '${startDate}'`);
-    if (endDate) conditions.push(`eventDate <= '${endDate}'`);
+    if (startDate) conditions.push(`toDate(timestamp) >= '${startDate}'`);
+    if (endDate) conditions.push(`toDate(timestamp) <= '${endDate}'`);
     const query = sql`
       SELECT
-        toString(eventDate) as eventDate,
+        toString(toDate(timestamp)) as eventDate,
         appName,
         stage,
         videoId,
         sessionId,
-        spans,
-        round(avgDurationMs, 2) as avgDurationMs
-      FROM ${PlaybackSpanAggregatedMV.targetTable}
+        toInt32(count(*)) as spans,
+        round(avg(durationMs), 2) as avgDurationMs
+      FROM PlaybackSpanEvent
+      ${conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : ""}
+      GROUP BY toDate(timestamp), appName, stage, videoId, sessionId
       ORDER BY eventDate DESC, spans DESC
       LIMIT 30
     `;

@@ -1,5 +1,4 @@
 import { Api, MooseCache } from "@514labs/moose-lib";
-import { HLSEventAggregatedMV } from "../views/hlsEventAggregated";
 import { tags } from "typia";
 
 // Query parameters for HLS API
@@ -73,20 +72,21 @@ export const HLSApi = new Api<HLSQueryParams, HLSResponseData[]>(
 
     const query = sql`
       SELECT 
-        toString(eventDate) as eventDate,
+        toString(toDate(timestamp)) as eventDate,
         appName,
         eventType,
         stage,
-        countMerge(totalEventsState) as totalEvents,
-        uniqMerge(uniqueUsersState) as uniqueUsers,
-        avgMerge(avgBitrateState) as avgBitrate,
-        maxMerge(maxBitrateState) as maxBitrate,
-        minMerge(minBitrateState) as minBitrate,
-        countMerge(levelSwitchesState) as levelSwitches,
-        countMerge(playbackStartsState) as playbackStarts,
-        avgMerge(avgFragmentDurationState) as avgFragmentDuration
-      FROM ${HLSEventAggregatedMV.targetTable}
-      ${whereClause}
+        toInt32(count(*)) as totalEvents,
+        toInt32(uniq(userId)) as uniqueUsers,
+        toInt32(avg(bitrate)) as avgBitrate,
+        toInt32(max(bitrate)) as maxBitrate,
+        toInt32(min(bitrate)) as minBitrate,
+        toInt32(countIf(eventType = 'level_switch')) as levelSwitches,
+        toInt32(countIf(eventType = 'playback_start')) as playbackStarts,
+        toInt32(avg(fragmentDuration)) as avgFragmentDuration
+      FROM HLSEvent
+      ${whereClause.replace("eventDate", "toDate(timestamp)")}
+      GROUP BY toDate(timestamp), appName, eventType, stage
       ORDER BY eventDate DESC, totalEvents DESC
       LIMIT ${limit}
     `;
@@ -122,24 +122,24 @@ export const VideoQualityApi = new Api<{ days?: number }, any[]>(
 
     const query = sql`
       SELECT 
-        toString(eventDate) as eventDate,
+        toString(toDate(timestamp)) as eventDate,
         appName,
-        avgMerge(avgBitrateState) as avgBitrate,
-        maxMerge(maxBitrateState) as maxBitrate,
-        minMerge(minBitrateState) as minBitrate,
-        countMerge(levelSwitchesState) as totalLevelSwitches,
-        countMerge(playbackStartsState) as totalPlaybackStarts,
-        avgMerge(avgFragmentDurationState) as avgFragmentDuration,
+        toInt32(avg(bitrate)) as avgBitrate,
+        toInt32(max(bitrate)) as maxBitrate,
+        toInt32(min(bitrate)) as minBitrate,
+        toInt32(countIf(eventType = 'level_switch')) as totalLevelSwitches,
+        toInt32(countIf(eventType = 'playback_start')) as totalPlaybackStarts,
+        toInt32(avg(fragmentDuration)) as avgFragmentDuration,
         -- Quality score calculation (higher bitrate = better quality)
         CASE 
-          WHEN avgMerge(avgBitrateState) >= 5000000 THEN 'Excellent'
-          WHEN avgMerge(avgBitrateState) >= 3000000 THEN 'Good'
-          WHEN avgMerge(avgBitrateState) >= 1500000 THEN 'Fair'
+          WHEN avg(bitrate) >= 5000000 THEN 'Excellent'
+          WHEN avg(bitrate) >= 3000000 THEN 'Good'
+          WHEN avg(bitrate) >= 1500000 THEN 'Fair'
           ELSE 'Poor'
         END as qualityRating
-      FROM ${HLSEventAggregatedMV.targetTable}
-      WHERE eventDate >= today() - ${days}
-      GROUP BY eventDate, appName
+      FROM HLSEvent
+      WHERE toDate(timestamp) >= today() - ${days}
+      GROUP BY toDate(timestamp), appName
       ORDER BY eventDate DESC, avgBitrate DESC
     `;
 

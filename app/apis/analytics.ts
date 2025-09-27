@@ -1,5 +1,4 @@
 import { Api, MooseCache } from "@514labs/moose-lib";
-import { AnalyticsEventAggregatedMV } from "../views/analyticsEventAggregated";
 import { tags } from "typia";
 
 // Query parameters for analytics API
@@ -148,24 +147,25 @@ export const RealtimeAnalyticsApi = new Api<{}, AnalyticsResponseData[]>(
 
     const query = sql`
       SELECT 
-        toString(eventDate) as eventDate,
+        toString(toDate(timestamp)) as eventDate,
         appName,
         eventType,
         stage,
-        uniqMerge(uniqueSessionsState) as uniqueSessions,
-        uniqMerge(uniqueVisitorsState) as uniqueVisitors,
-        uniqMerge(uniquePageviewsState) as pageviews,
-        countMerge(totalEventsState) as totalEvents,
-        uniqMerge(uniqueUsersState) as uniqueUsers,
-        uniqMerge(uniqueIPsState) as uniqueIPs,
-        countMerge(chromeUsersState) as chromeUsers,
-        countMerge(safariUsersState) as safariUsers,
-        countMerge(firefoxUsersState) as firefoxUsers,
-        countMerge(macOSUsersState) as macOSUsers,
-        countMerge(windowsUsersState) as windowsUsers,
-        countMerge(navigationEventsState) as navigationEvents
-      FROM ${AnalyticsEventAggregatedMV.targetTable}
-      WHERE eventDate >= today() - 1
+        toInt32(uniq(sessionId)) as uniqueSessions,
+        toInt32(uniq(visitorId)) as uniqueVisitors,
+        toInt32(uniq(pageviewId)) as pageviews,
+        toInt32(count(*)) as totalEvents,
+        toInt32(uniq(userId)) as uniqueUsers,
+        toInt32(uniq(sourceIp)) as uniqueIPs,
+        toInt32(countIf(browserName = 'Chrome')) as chromeUsers,
+        toInt32(countIf(browserName = 'Safari')) as safariUsers,
+        toInt32(countIf(browserName = 'Firefox')) as firefoxUsers,
+        toInt32(countIf(operatingSystem = 'macOS')) as macOSUsers,
+        toInt32(countIf(operatingSystem = 'Windows')) as windowsUsers,
+        toInt32(countIf(navigationHref IS NOT NULL)) as navigationEvents
+      FROM AnalyticsEvent
+      WHERE toDate(timestamp) >= today() - 1
+      GROUP BY toDate(timestamp), appName, eventType, stage
       ORDER BY eventDate DESC, totalEvents DESC
       LIMIT 50
     `;
