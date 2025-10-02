@@ -282,43 +282,56 @@ PNXEventPipeline.stream!.addTransform(
 
     const { browserName, operatingSystem } = parseUserAgent(pnxEvent.userAgent);
 
-    // Extract additional metric data (exclude base fields)
-    const parsedMetric: Record<string, unknown> = (pnxEvent as any).metricData
-      ? ((pnxEvent as any).metricData as Record<string, unknown>)
-      : pnxEvent.metricDataJson
-      ? (JSON.parse(pnxEvent.metricDataJson) as Record<string, unknown>)
-      : {};
-    const baseFields = [
-      "eventId",
-      "appName",
-      "appVersion",
-      "userId",
-      "sessionId",
-      "visitorId",
-      "pageviewId",
-      "type",
-      "event",
-      "description",
-      "eventSource",
-      "source",
-      "navigationHref",
-      "href",
-      "requestTimeEpoch",
-      "domainName",
-      "stage",
-      "sourceIp",
-      "userAgent",
-      "message",
-      "stack",
-      "errorMessage",
-      "stackTrace",
-    ];
-
-    (Object.keys(pnxEvent) as Array<keyof PNXEvent>).forEach((key) => {
-      if (!baseFields.includes(key as string) && pnxEvent[key] !== undefined) {
-        (parsedMetric as any)[key] = pnxEvent[key];
+    // Parse metric data from JSON
+    let parsedMetricData: Record<string, unknown> = {};
+    if ((pnxEvent as any).metricData) {
+      parsedMetricData = (pnxEvent as any).metricData as Record<
+        string,
+        unknown
+      >;
+    } else if (pnxEvent.metricDataJson) {
+      try {
+        parsedMetricData = JSON.parse(pnxEvent.metricDataJson) as Record<
+          string,
+          unknown
+        >;
+      } catch (error) {
+        console.warn(
+          `Failed to parse metricDataJson for event ${pnxEvent.eventId}:`,
+          error
+        );
       }
-    });
+    }
+
+    // Extract specific metric fields with proper typing
+    const reason =
+      typeof parsedMetricData.reason === "string"
+        ? parsedMetricData.reason
+        : undefined;
+    const startWallClockMs =
+      typeof parsedMetricData.startWallClockMs === "number"
+        ? parsedMetricData.startWallClockMs
+        : undefined;
+    const endWallClockMs =
+      typeof parsedMetricData.endWallClockMs === "number"
+        ? parsedMetricData.endWallClockMs
+        : undefined;
+    const durationMs =
+      typeof parsedMetricData.durationMs === "number"
+        ? parsedMetricData.durationMs
+        : undefined;
+    const startPositionSec =
+      typeof parsedMetricData.startPositionSec === "number"
+        ? parsedMetricData.startPositionSec
+        : undefined;
+    const endPositionSec =
+      typeof parsedMetricData.endPositionSec === "number"
+        ? parsedMetricData.endPositionSec
+        : undefined;
+    const totalDurationSec =
+      typeof parsedMetricData.totalDurationSec === "number"
+        ? parsedMetricData.totalDurationSec
+        : undefined;
 
     const result: MetricEvent = {
       eventId: pnxEvent.eventId,
@@ -331,7 +344,14 @@ PNXEventPipeline.stream!.addTransform(
       videoId: (pnxEvent as any).videoId,
       eventType: pnxEvent.event,
       description: pnxEvent.description,
-      metricDataJson: JSON.stringify(parsedMetric),
+      // Transformed metric data fields
+      reason,
+      startWallClockMs,
+      endWallClockMs,
+      durationMs,
+      startPositionSec,
+      endPositionSec,
+      totalDurationSec,
       timestamp: new Date(pnxEvent.requestTimeEpoch),
       domainName: pnxEvent.domainName,
       stage: pnxEvent.stage,

@@ -150,7 +150,14 @@ export interface MetricEvent {
   videoId?: string; // Promote common field for metrics (e.g., playback spans)
   eventType: string; // From message.event
   description?: string; // Optional human readable description
-  metricDataJson: string; // JSON stringified additional metric properties
+  // Transformed metric data fields
+  reason?: string; // e.g., "pause"
+  startWallClockMs?: number; // Wall clock timestamp when metric started
+  endWallClockMs?: number; // Wall clock timestamp when metric ended
+  durationMs?: number; // Duration in milliseconds
+  startPositionSec?: number; // Start position in seconds
+  endPositionSec?: number; // End position in seconds
+  totalDurationSec?: number; // Total duration in seconds
   timestamp: Date; // From requestTimeEpoch
   domainName: string;
   stage: string;
