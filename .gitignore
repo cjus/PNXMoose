@@ -5,5 +5,7 @@ coverage
 .ts-node
 .cursor
 internal-docs
+docs/*.md
+docs/*.sql
 
 

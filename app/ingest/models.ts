@@ -211,7 +211,7 @@ export interface ErrorEvent {
 
 /** Raw PNX event ingestion */
 export const PNXEventPipeline = new IngestPipeline<PNXEvent>("PNXEvent", {
-  table: false, // No table; only stream raw events
+  table: true,
   stream: true, // Buffer ingested events
   ingest: true, // POST /ingest/PNXEvent
   // deadLetterQueue: {
