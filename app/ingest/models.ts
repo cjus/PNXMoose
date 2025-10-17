@@ -1,4 +1,4 @@
-import { IngestPipeline, Key } from "@514labs/moose-lib";
+import { IngestPipeline, ETLPipeline, Key } from "@514labs/moose-lib";
 
 /**
  * Data Pipeline: PNX Events → Analytics Processing
@@ -211,9 +211,12 @@ export interface ErrorEvent {
 
 /** Raw PNX event ingestion */
 export const PNXEventPipeline = new IngestPipeline<PNXEvent>("PNXEvent", {
-  table: true,
+  table: {
+    orderByFields: ["requestTimeEpoch", "domainName", "stage"],
+  },
+  // Enable HTTP ingestion with a minimal handler; validate/transform as needed
+  ingestApi: { path: "ingest/PNXEvent" },
   stream: true, // Buffer ingested events
-  ingest: true, // POST /ingest/PNXEvent
   // deadLetterQueue: {
   //   destination: pnxEventDeadLetterTable,
   // },
@@ -223,17 +226,17 @@ export const PNXEventPipeline = new IngestPipeline<PNXEvent>("PNXEvent", {
 export const AnalyticsEventPipeline = new IngestPipeline<AnalyticsEvent>(
   "AnalyticsEvent",
   {
-    table: true, // Persist in ClickHouse table "AnalyticsEvent"
-    stream: true, // Buffer processed events
-    ingest: false, // No direct API; only derive from PNXEvent
+    table: { orderByFields: ["eventId", "timestamp"] },
+    stream: true,
+    ingestApi: false,
   }
 );
 
 /** HLS video events processing and storage */
 export const HLSEventPipeline = new IngestPipeline<HLSEvent>("HLSEvent", {
-  table: true, // Persist in ClickHouse table "HLSEvent"
-  stream: true, // Buffer processed events
-  ingest: false, // No direct API; only derive from PNXEvent
+  table: { orderByFields: ["eventId", "timestamp"] },
+  stream: true,
+  ingestApi: false,
 });
 
 // (NavigationEvent removed) Navigation is now represented as AnalyticsEvent with source="website-navigation"
@@ -241,24 +244,24 @@ export const HLSEventPipeline = new IngestPipeline<HLSEvent>("HLSEvent", {
 /** Authentication events processing and storage */
 export const AuthenticationEventPipeline =
   new IngestPipeline<AuthenticationEvent>("AuthenticationEvent", {
-    table: true, // Persist in ClickHouse table "AuthenticationEvent"
-    stream: true, // Buffer processed events
-    ingest: false, // No direct API; only derive from PNXEvent
+    table: { orderByFields: ["eventId", "timestamp"] },
+    stream: true,
+    ingestApi: false,
   });
 
 /** Metric events processing and storage */
 export const MetricEventPipeline = new IngestPipeline<MetricEvent>(
   "MetricEvent",
   {
-    table: true, // Persist in ClickHouse table "MetricEvent"
-    stream: true, // Buffer processed events
-    ingest: false, // No direct API; only derive from PNXEvent
+    table: { orderByFields: ["eventId", "timestamp"] },
+    stream: true,
+    ingestApi: false,
   }
 );
 
 /** Error events processing and storage */
 export const ErrorEventPipeline = new IngestPipeline<ErrorEvent>("ErrorEvent", {
-  table: true, // Persist in ClickHouse table "ErrorEvent"
-  stream: true, // Buffer processed events
-  ingest: false, // No direct API; only derive from PNXEvent
+  table: { orderByFields: ["eventId", "timestamp"] },
+  stream: true,
+  ingestApi: false,
 });
