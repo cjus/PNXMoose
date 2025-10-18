@@ -121,8 +121,8 @@ export const VideoSegmentsApi = new Api<
       SELECT
         toInt32(binStart) as binStartSec,
         toInt32(binStart + bin) as binEndSec,
-        round(sum(watchSec), 2) as watchSec,
-        toInt32(countIf(watchSec > 0)) as spans
+        round(sum(watchedSec), 2) as watchSec,
+        toInt32(countIf(watchedSec > 0)) as spans
       FROM (
         SELECT
           toFloat64(startPositionSec) as s,
@@ -132,7 +132,7 @@ export const VideoSegmentsApi = new Api<
               range(toInt32(greatest(0, floor((greatest(e, s) - 1) / bin) - floor(s / bin) + 1)))
             )
           ) as binStart,
-          greatest(0.0, least(greatest(e, s), binStart + bin) - greatest(s, binStart)) as watchSec
+          greatest(0.0, least(greatest(e, s), binStart + bin) - greatest(s, binStart)) as watchedSec
         FROM MetricEvent
         WHERE videoId = ${videoId}
           ${appName ? sql`AND appName = ${appName}` : sql``}
