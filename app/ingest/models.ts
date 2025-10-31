@@ -215,7 +215,7 @@ export const PNXEventPipeline = new IngestPipeline<PNXEvent>("PNXEvent", {
     orderByFields: ["requestTimeEpoch", "domainName", "stage"],
   },
   // Enable HTTP ingestion with a minimal handler; validate/transform as needed
-  ingest: { path: "ingest/PNXEvent" },
+  ingestApi: { path: "ingest/PNXEvent" },
   stream: true, // Buffer ingested events
   // deadLetterQueue: {
   //   destination: pnxEventDeadLetterTable,
@@ -228,7 +228,7 @@ export const AnalyticsEventPipeline = new IngestPipeline<AnalyticsEvent>(
   {
     table: { orderByFields: ["eventId", "timestamp"] },
     stream: true,
-    ingest: false,
+    ingestApi: false,
   }
 );
 
@@ -236,7 +236,7 @@ export const AnalyticsEventPipeline = new IngestPipeline<AnalyticsEvent>(
 export const HLSEventPipeline = new IngestPipeline<HLSEvent>("HLSEvent", {
   table: { orderByFields: ["eventId", "timestamp"] },
   stream: true,
-  ingest: false,
+  ingestApi: false,
 });
 
 // (NavigationEvent removed) Navigation is now represented as AnalyticsEvent with source="website-navigation"
@@ -246,7 +246,7 @@ export const AuthenticationEventPipeline =
   new IngestPipeline<AuthenticationEvent>("AuthenticationEvent", {
     table: { orderByFields: ["eventId", "timestamp"] },
     stream: true,
-    ingest: false,
+    ingestApi: false,
   });
 
 /** Metric events processing and storage */
@@ -255,7 +255,7 @@ export const MetricEventPipeline = new IngestPipeline<MetricEvent>(
   {
     table: { orderByFields: ["eventId", "timestamp"] },
     stream: true,
-    ingest: false,
+    ingestApi: false,
   }
 );
 
@@ -263,5 +263,5 @@ export const MetricEventPipeline = new IngestPipeline<MetricEvent>(
 export const ErrorEventPipeline = new IngestPipeline<ErrorEvent>("ErrorEvent", {
   table: { orderByFields: ["eventId", "timestamp"] },
   stream: true,
-  ingest: false,
+  ingestApi: false,
 });
