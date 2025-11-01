@@ -46,7 +46,7 @@ export const UserSessionApi = new Api<
   ) => {
     // Ensure numeric parameters have proper defaults
     const minDuration = minDurationMinutes ?? 0;
-    const limitValue = limit ?? 100;
+    const limitValue = limit ?? 100; // default to 100 if not provided
 
     const cache = await MooseCache.get();
     const cacheKey = `user-sessions:${userId || "all"}:${appName || "all"}:${
