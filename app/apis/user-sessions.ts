@@ -161,8 +161,8 @@ export const UserSessionApi = new Api<
         toString(u.firstSeenDate) as firstSeenDate,
         toInt32(u.daysSinceFirstVisit) as daysSinceFirstVisit,
         arrayFilter(x -> x IS NOT NULL, u.videoIds) as videoIds,
-        b.primaryBrowser ?? '' as primaryBrowser,
-        b.primaryOS ?? '' as primaryOS,
+        ifNull(b.primaryBrowser, '') as primaryBrowser,
+        ifNull(b.primaryOS, '') as primaryOS,
         round(ifNull(w.totalWatchTimeMinutes, 0), 2) as totalWatchTimeMinutes,
         toInt32(ifNull(e.errorCount, 0)) as errorCount
       FROM UserMetrics u
@@ -198,6 +198,10 @@ export const UserSessionApi = new Api<
       return convertedResult;
     } catch (error) {
       console.error("User Session API error:", error);
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
       return [];
     }
   }
