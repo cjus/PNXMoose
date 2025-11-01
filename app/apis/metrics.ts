@@ -41,7 +41,8 @@ export const PlaybackSpanApi = new Api<
     if (cached && Array.isArray(cached) && cached.length > 0) return cached;
 
     // Build WHERE as a single Sql object to avoid invalid parameter placement
-    const filters = [sql`1`];
+    // Always filter for playback-span events since this API is specific to that event type
+    const filters = [sql`eventType = 'playback-span'`];
     if (appName) filters.push(sql`appName = ${appName}`);
     if (stage) filters.push(sql`stage = ${stage}`);
     if (videoId) filters.push(sql`videoId = ${videoId}`);
@@ -76,7 +77,11 @@ export const PlaybackSpanApi = new Api<
       await cache.set(cacheKey, result, 600);
       return result;
     } catch (error) {
-      console.error("Metrics API error:", error);
+      console.error("PlaybackSpan API error:", error);
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
       // Return empty array if table doesn't exist or query fails
       return [];
     }
