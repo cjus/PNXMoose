@@ -44,10 +44,14 @@ export const UserSessionApi = new Api<
     },
     { client, sql }
   ) => {
+    // Ensure numeric parameters have proper defaults
+    const minDuration = minDurationMinutes ?? 0;
+    const limitValue = limit ?? 100; // default to 100 if not provided
+
     const cache = await MooseCache.get();
     const cacheKey = `user-sessions:${userId || "all"}:${appName || "all"}:${
       stage || "all"
-    }:${startDate || ""}:${endDate || ""}:${minDurationMinutes}:${limit}`;
+    }:${startDate || ""}:${endDate || ""}:${minDuration}:${limitValue}`;
 
     const cached = await cache.get<UserSessionResponse[]>(cacheKey);
     if (cached && Array.isArray(cached) && cached.length > 0) {
@@ -61,7 +65,7 @@ export const UserSessionApi = new Api<
     if (endDate) filters.push(sql`toDate(timestamp) <= ${endDate}`);
     if (appName) filters.push(sql`appName = ${appName}`);
     if (stage) filters.push(sql`stage = ${stage}`);
-    
+
     const where = joinQueries({
       values: filters,
       separator: " AND ",
@@ -109,7 +113,7 @@ export const UserSessionApi = new Api<
         FROM CombinedEvents c
         LEFT JOIN SessionDurations sd ON c.userId = sd.userId AND c.sessionId = sd.sessionId
         GROUP BY c.userId
-        HAVING avgSessionDurationMinutes >= ${minDurationMinutes}
+        HAVING avgSessionDurationMinutes >= ${minDuration}
       ),
       BrowserOS AS (
         SELECT
@@ -159,14 +163,14 @@ export const UserSessionApi = new Api<
         arrayFilter(x -> x IS NOT NULL, u.videoIds) as videoIds,
         b.primaryBrowser ?? '' as primaryBrowser,
         b.primaryOS ?? '' as primaryOS,
-        round(if(w.totalWatchTimeMinutes > 0, w.totalWatchTimeMinutes, 0), 2) as totalWatchTimeMinutes,
-        toInt32(if(e.errorCount > 0, e.errorCount, 0)) as errorCount
+        round(ifNull(w.totalWatchTimeMinutes, 0), 2) as totalWatchTimeMinutes,
+        toInt32(ifNull(e.errorCount, 0)) as errorCount
       FROM UserMetrics u
       LEFT JOIN BrowserOS b ON u.userId = b.userId
       LEFT JOIN WatchTime w ON u.userId = w.userId
       LEFT JOIN ErrorCounts e ON u.userId = e.userId
       ORDER BY u.sessionCount DESC, u.totalEvents DESC
-      LIMIT ${limit}
+      LIMIT ${limitValue}
     `;
 
     try {
@@ -179,9 +183,11 @@ export const UserSessionApi = new Api<
         sessionCount: parseInt(item.sessionCount.toString()) || 0,
         activeDays: parseInt(item.activeDays.toString()) || 0,
         totalEvents: parseInt(item.totalEvents.toString()) || 0,
-        avgSessionDurationMinutes: parseFloat(item.avgSessionDurationMinutes.toString()) || 0,
+        avgSessionDurationMinutes:
+          parseFloat(item.avgSessionDurationMinutes.toString()) || 0,
         daysSinceFirstVisit: parseInt(item.daysSinceFirstVisit.toString()) || 0,
-        totalWatchTimeMinutes: parseFloat(item.totalWatchTimeMinutes.toString()) || 0,
+        totalWatchTimeMinutes:
+          parseFloat(item.totalWatchTimeMinutes.toString()) || 0,
         errorCount: parseInt(item.errorCount.toString()) || 0,
         videoIds: Array.isArray(item.videoIds) ? item.videoIds : [],
       }));
@@ -196,4 +202,3 @@ export const UserSessionApi = new Api<
     }
   }
 );
-
