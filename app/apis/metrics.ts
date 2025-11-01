@@ -67,7 +67,7 @@ export const PlaybackSpanApi = new Api<
       ${where}
       GROUP BY toDate(timestamp), appName, stage, videoId, sessionId
       ORDER BY eventDate DESC, spans DESC
-      LIMIT 30
+      LIMIT ${limit}
     `;
 
     try {
