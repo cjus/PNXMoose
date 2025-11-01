@@ -72,70 +72,32 @@ export const ErrorImpactApi = new Api<
       groupByColumns = "errorClass, errorMessage, browserName";
     }
 
+    // Simplified query - remove complex BrowserStats CTE for now
+    const groupBySql = groupBy === "errorClass" 
+      ? sql`errorClass, errorMessage, severity`
+      : groupBy === "fileName"
+      ? sql`fileName, line, column, severity`
+      : sql`errorClass, errorMessage, browserName, severity`;
+
     const query = sql`
-      WITH ErrorStats AS (
-        SELECT
-          errorClass,
-          any(errorMessage) as errorMessage,
-          any(fileName) as fileName,
-          any(line) as line,
-          any(column) as column,
-          any(severity) as severity,
-          any(urlPath) as urlPath,
-          count(*) as occurrences,
-          uniq(userId) as affectedUsers,
-          uniq(sessionId) as affectedSessions,
-          min(timestamp) as firstOccurrence,
-          max(timestamp) as lastOccurrence,
-          (count(*) * uniq(userId)) as impactScore
-        FROM ErrorEvent
-        ${where}
-        GROUP BY ${groupBy === "errorClass" ? sql`errorClass, errorMessage` : 
-          groupBy === "fileName" ? sql`fileName, line, column` : 
-          sql`errorClass, errorMessage, browserName`}
-      ),
-      BrowserStats AS (
-        SELECT
-          ${groupBy === "errorClass" ? sql`errorClass, errorMessage` : 
-            groupBy === "fileName" ? sql`fileName, line, column` : 
-            sql`errorClass, errorMessage, browserName`} as groupingKey,
-          browserName,
-          count(*) as browserCount
-        FROM ErrorEvent
-        ${where}
-        GROUP BY groupingKey, browserName
-      ),
-      BrowserAgg AS (
-        SELECT
-          ${groupBy === "errorClass" ? sql`errorClass, errorMessage` : 
-            groupBy === "fileName" ? sql`fileName, line, column` : 
-            sql`errorClass, errorMessage, browserName`} as groupingKey,
-          sum(browserCount) as totalForGroup,
-          groupArray((browserName, browserCount)) as browserArray
-        FROM BrowserStats
-        GROUP BY groupingKey
-      )
       SELECT
-        e.errorClass ?? '' as errorClass,
-        e.errorMessage ?? '' as errorMessage,
-        e.fileName ?? NULL as fileName,
-        if(e.line > 0, e.line, NULL) as line,
-        if(e.column > 0, e.column, NULL) as column,
-        toInt32(e.occurrences) as occurrences,
-        toInt32(e.affectedUsers) as affectedUsers,
-        toInt32(e.affectedSessions) as affectedSessions,
-        toString(e.firstOccurrence) as firstOccurrence,
-        toString(e.lastOccurrence) as lastOccurrence,
-        e.severity ?? 'error' as severity,
-        toInt64(e.impactScore) as impactScore,
-        e.urlPath ?? NULL as urlPath,
-        [] as browserBreakdown
-      FROM ErrorStats e
-      LEFT JOIN BrowserAgg b ON 
-        ${groupBy === "errorClass" ? sql`e.errorClass = b.groupingKey.1 AND e.errorMessage = b.groupingKey.2` :
-          groupBy === "fileName" ? sql`e.fileName = b.groupingKey.1 AND e.line = b.groupingKey.2 AND e.column = b.groupingKey.3` :
-          sql`e.errorClass = b.groupingKey.1 AND e.errorMessage = b.groupingKey.2 AND e.browserName = b.groupingKey.3`}
-      ORDER BY e.impactScore DESC
+        ifNull(errorClass, '') as errorClass,
+        ifNull(errorMessage, '') as errorMessage,
+        any(fileName) as fileName,
+        if(any(line) > 0, any(line), NULL) as line,
+        if(any(column) > 0, any(column), NULL) as column,
+        toInt32(count(*)) as occurrences,
+        toInt32(uniq(userId)) as affectedUsers,
+        toInt32(uniq(sessionId)) as affectedSessions,
+        toString(min(timestamp)) as firstOccurrence,
+        toString(max(timestamp)) as lastOccurrence,
+        ifNull(severity, 'error') as severity,
+        toInt64(count(*) * uniq(userId)) as impactScore,
+        any(urlPath) as urlPath
+      FROM ErrorEvent
+      ${where}
+      GROUP BY ${groupBySql}
+      ORDER BY impactScore DESC
       LIMIT ${limit}
     `;
 

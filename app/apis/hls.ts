@@ -1,4 +1,4 @@
-import { Api, MooseCache } from "@514labs/moose-lib";
+import { Api, MooseCache, joinQueries } from "@514labs/moose-lib";
 import { tags } from "typia";
 
 // Query parameters for HLS API
@@ -38,37 +38,34 @@ export const HLSApi = new Api<HLSQueryParams, HLSResponseData[]>(
       stage || "all"
     }:${startDate || ""}:${endDate || ""}:${limit}`;
 
-    // Try cache first
+    // Try cache first - but verify it has valid data
     const cachedData = await cache.get<HLSResponseData[]>(cacheKey);
     if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
-      return cachedData;
+      // Verify cached data structure is valid (has required fields)
+      const hasValidStructure = cachedData.every(
+        (item) => item.eventDate && item.appName && item.eventType
+      );
+      if (hasValidStructure) {
+        return cachedData;
+      } else {
+        // Cache contains invalid data, invalidate it
+        await cache.delete(cacheKey);
+      }
     }
 
-    // Build dynamic WHERE clause
-    const conditions: string[] = [];
+    // Build WHERE filters using SQL template objects
+    const filters = [sql`1`];
+    if (appName) filters.push(sql`appName = ${appName}`);
+    if (eventType) filters.push(sql`eventType = ${eventType}`);
+    if (stage) filters.push(sql`stage = ${stage}`);
+    if (startDate) filters.push(sql`toDate(timestamp) >= ${startDate}`);
+    if (endDate) filters.push(sql`toDate(timestamp) <= ${endDate}`);
 
-    if (appName) {
-      conditions.push(`appName = '${appName}'`);
-    }
-
-    if (eventType) {
-      conditions.push(`eventType = '${eventType}'`);
-    }
-
-    if (stage) {
-      conditions.push(`stage = '${stage}'`);
-    }
-
-    if (startDate) {
-      conditions.push(`eventDate >= '${startDate}'`);
-    }
-
-    if (endDate) {
-      conditions.push(`eventDate <= '${endDate}'`);
-    }
-
-    const whereClause =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const where = joinQueries({
+      values: filters,
+      separator: " AND ",
+      prefix: "WHERE ",
+    });
 
     const query = sql`
       SELECT 
@@ -78,14 +75,14 @@ export const HLSApi = new Api<HLSQueryParams, HLSResponseData[]>(
         stage,
         toInt32(count(*)) as totalEvents,
         toInt32(uniq(userId)) as uniqueUsers,
-        toInt32(avg(bitrate)) as avgBitrate,
-        toInt32(max(bitrate)) as maxBitrate,
-        toInt32(min(bitrate)) as minBitrate,
-        toInt32(countIf(eventType = 'level_switch')) as levelSwitches,
-        toInt32(countIf(eventType = 'playback_start')) as playbackStarts,
-        toInt32(avg(fragmentDuration)) as avgFragmentDuration
+        toInt32(ifNull(avg(bitrate), 0)) as avgBitrate,
+        toInt32(ifNull(max(bitrate), 0)) as maxBitrate,
+        toInt32(ifNull(min(bitrate), 0)) as minBitrate,
+        toInt32(countIf(eventType = 'level-switched')) as levelSwitches,
+        toInt32(countIf(eventType = 'playback-started')) as playbackStarts,
+        toInt32(ifNull(avg(fragmentDuration), 0)) as avgFragmentDuration
       FROM HLSEvent
-      ${whereClause.replace("eventDate", "toDate(timestamp)")}
+      ${where}
       GROUP BY toDate(timestamp), appName, eventType, stage
       ORDER BY eventDate DESC, totalEvents DESC
       LIMIT ${limit}
@@ -94,6 +91,12 @@ export const HLSApi = new Api<HLSQueryParams, HLSResponseData[]>(
     try {
       const data = await client.query.execute<HLSResponseData>(query);
       const result: HLSResponseData[] = await data.json();
+
+      // Debug: log result count
+      console.log(`HLS API - Returning ${result.length} rows`);
+      if (result.length > 0) {
+        console.log(`HLS API - First row:`, JSON.stringify(result[0], null, 2));
+      }
 
       // Cache for 30 minutes
       await cache.set(cacheKey, result, 1800);
